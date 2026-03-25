@@ -1,0 +1,16 @@
+[2026-03-25 13:48:33] Server naslouchá na portu 65525. Čekám na hráče...
+[2026-03-25 13:48:54] Připojeno nové zařízení (ID: a8a39d27-59d6-455c-b4de-248fe26e4331).
+[2026-03-25 13:49:08] Vytvořen nový účet: Tomas.
+[2026-03-25 13:49:33] Stav hráče Tomas byl bezpečně uložen.
+[2026-03-25 13:49:33] Spojení s Tomas ukončeno.
+[2026-03-25 13:51:20] Připojeno nové zařízení (ID: f59380c3-5a26-43c7-91e7-8e34bbef3611).
+[2026-03-25 13:51:25] [Chyba] Klient f59380c3-5a26-43c7-91e7-8e34bbef3611: Value cannot be null. (Parameter 's')
+[2026-03-25 13:51:25] Spojení s SSH-2.0-PuTTY_Release_0.74 ukončeno.
+[2026-03-25 13:51:40] Připojeno nové zařízení (ID: 3d0208d7-0bba-4730-91ad-351fd3eb753b).
+[2026-03-25 13:51:52] Hráč Tomas se úspěšně přihlásil.
+[2026-03-25 13:52:20] Připojeno nové zařízení (ID: 8ad8b206-7545-4079-ad27-0b4f3d238966).
+[2026-03-25 13:52:28] Vytvořen nový účet: Roman.
+[2026-03-25 13:53:31] Stav hráče Tomas byl bezpečně uložen.
+[2026-03-25 13:53:31] Spojení s Tomas ukončeno.
+[2026-03-25 13:53:34] Stav hráče Roman byl bezpečně uložen.
+[2026-03-25 13:53:34] Spojení s Roman ukončeno.

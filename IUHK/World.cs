@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
 using TartarusMUD.Models;
 
 namespace TartarusMUD.Core
@@ -6,34 +9,73 @@ namespace TartarusMUD.Core
     public class World
     {
         public Room StartRoom { get; private set; }
+        
+        // Slovník všech místností pro rychlé vyhledávání podle ID
+        private Dictionary<string, Room> _rooms = new Dictionary<string, Room>();
 
         public World()
         {
-            BuildWorld();
+            LoadWorld();
         }
 
-        private void BuildWorld()
+        private void LoadWorld()
         {
-            // 1. Vytvoření místností
-            Room cryo = new Room("kryo_1", "Kryogenická komora A", "Probudil ses v chladné, matně osvětlené místnosti. Všude kolem jsou poškozené kryokapsle. Na sever vedou pootevřené dveře.");
-            Room corridor = new Room("chodba_1", "Temná chodba", "Dlouhá kovová chodba. Blikající zářivky odhalují krvavé stopy na podlaze. Na jihu je kryokomora, na východě vidíš skladiště.");
-            Room storage = new Room("sklad_1", "Skladiště", "Místnost plná rozházených beden a harampádí. Vypadá to, že tu někdo ve spěchu hledal zásoby. Na západ se vrátíš do chodby.");
+            string filePath = Path.Combine("Data", "rooms.json");
 
-            // 2. Propojení východů
-            cryo.Exits.Add("sever", corridor);
-            corridor.Exits.Add("jih", cryo);
-            corridor.Exits.Add("vychod", storage);
-            storage.Exits.Add("zapad", corridor);
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException($"Kritická chyba: Soubor s mapou nebyl nalezen na cestě {filePath}");
+            }
 
-            // 3. Přidání předmětů (zatím jen textové řetězce)
-            cryo.Items.Add("karta"); // Přístupová karta
-            storage.Items.Add("lekarnicka");
+            try
+            {
+                // 1. FÁZE: Načtení dat z JSONu
+                string jsonString = File.ReadAllText(filePath);
+                List<Room> loadedRooms = JsonSerializer.Deserialize<List<Room>>(jsonString);
 
-            // 4. Přidání NPC pro příkaz "mluv"
-            corridor.Npcs.Add("bot", "Údržbářský bot jiskří a mechanickým hlasem opakuje: 'Kritické poškození trupu. Sektor uzavřen.'");
+                // Uložení do slovníku
+                foreach (var room in loadedRooms)
+                {
+                    _rooms[room.Id] = room;
+                }
 
-            // Nastavení startovní místnosti
-            StartRoom = cryo;
+                // 2. FÁZE: Propojení východů (převod textových ID na skutečné objekty Room)
+                foreach (var room in _rooms.Values)
+                {
+                    foreach (var exit in room.ExitIds)
+                    {
+                        string direction = exit.Key;
+                        string targetRoomId = exit.Value;
+
+                        if (_rooms.TryGetValue(targetRoomId, out Room targetRoom))
+                        {
+                            room.Exits[direction] = targetRoom;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"[Varování mapy] Místnost {room.Id} má východ '{direction}' do neexistující místnosti '{targetRoomId}'!");
+                        }
+                    }
+                }
+
+                // Nastavíme startovní místnost (např. první z načtených)
+                if (loadedRooms.Count > 0)
+                {
+                    StartRoom = loadedRooms[0];
+                    Console.WriteLine($"[Systém] Mapa úspěšně načtena. Počet místností: {_rooms.Count}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Kritická chyba] Nepodařilo se načíst mapu: {ex.Message}");
+            }
+        }
+        
+        // Pomocná metoda pro pozdější použití (např. při obnově pozice hráče)
+        public Room GetRoomById(string id)
+        {
+            _rooms.TryGetValue(id, out Room room);
+            return room;
         }
     }
 }

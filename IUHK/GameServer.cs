@@ -11,36 +11,38 @@ namespace TartarusMUD
 {
     public class GameServer
     {
-
-        // Vláknově bezpečná kolekce pro udržení aktivních spojení (hráčů)
         private readonly ConcurrentDictionary<Guid, TcpClient> _connectedClients = new();
+        
+        // Naše herní a systémové komponenty
         private readonly World _world = new World();
         private readonly CommandParser _parser = new CommandParser();
+        private readonly SaveManager _saveManager = new SaveManager();
+        private readonly ServerLogger _logger = new ServerLogger();
 
         public async Task StartAsync(int port)
         {
             TcpListener listener = new TcpListener(IPAddress.Any, port);
             listener.Start();
-            Console.WriteLine($"Server naslouchá na portu {port}. Čekám na hráče...");
+            
+            string startupMsg = $"Server naslouchá na portu {port}. Čekám na hráče...";
+            Console.WriteLine(startupMsg);
+            _logger.Log(startupMsg); // Zapíšeme start do logu
 
             try
             {
                 while (true)
                 {
-                    // Asynchronně čekáme na připojení nového klienta
                     TcpClient client = await listener.AcceptTcpClientAsync();
                     Guid clientId = Guid.NewGuid();
                     _connectedClients.TryAdd(clientId, client);
 
-                    Console.WriteLine($"[Připojeno] Klient {clientId} se připojil.");
-
-                    // Spustíme obsluhu klienta na pozadí a nečekáme na její dokončení (Fire and Forget)
+                    _logger.Log($"Připojeno nové zařízení (ID: {clientId}).");
                     _ = HandleClientAsync(clientId, client);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Kritická chyba serveru: {ex.Message}");
+                _logger.Log($"Kritická chyba serveru: {ex.Message}");
             }
             finally
             {
@@ -55,27 +57,66 @@ namespace TartarusMUD
             using StreamWriter writer = new StreamWriter(stream) { AutoFlush = true };
 
             Player newPlayer = new Player(writer);
+            string passwordHash = ""; // Uchováme si hash pro ukládání při odpojení
 
             try
             {
-                // 1. Přihlášení (Získání jména)
+                // 1. Získání jména
                 await writer.WriteAsync("Zadej sve jmeno:\r\n> ");
                 string name = await reader.ReadLineAsync();
-                if (string.IsNullOrWhiteSpace(name)) name = $"Hráč_{clientId.ToString().Substring(0, 4)}";
-
+                if (string.IsNullOrWhiteSpace(name)) name = $"Hrac_{clientId.ToString().Substring(0,4)}";
+                
                 newPlayer.Name = name;
 
-                // 2. Vstup do světa
-                newPlayer.CurrentRoom = _world.StartRoom;
-                lock (_world) // Ochrana proti souběhu při přidávání hráče
+                // 2. Kontrola účtu a hesla
+                if (_saveManager.AccountExists(name))
                 {
-                    newPlayer.CurrentRoom.Players.Add(newPlayer);
+                    await writer.WriteAsync("Ucet nalezen. Zadej heslo:\r\n> ");
+                    string password = await reader.ReadLineAsync();
+                    passwordHash = _saveManager.HashPassword(password);
+
+                    PlayerSaveData saveData = _saveManager.LoadPlayer(name);
+                    
+                    if (saveData.PasswordHash != passwordHash)
+                    {
+                        await writer.WriteAsync("Spatne heslo! Odpojuji...\r\n");
+                        _logger.Log($"Neúspěšný pokus o přihlášení na účet {name}.");
+                        return; // Okamžitě ukončí spojení
+                    }
+
+                    // Obnova dat hráče
+                    newPlayer.Inventory = saveData.Inventory ?? new System.Collections.Generic.List<string>();
+                    
+                    // Pokusíme se najít místnost, kde se odpojil. Pokud neexistuje (např. jsme ji smazali z mapy), hodíme ho na start.
+                    newPlayer.CurrentRoom = _world.GetRoomById(saveData.CurrentRoomId) ?? _world.StartRoom;
+                    
+                    await writer.WriteAsync("\r\nHeslo prijato. Vitej zpet na stanici!\r\n");
+                    _logger.Log($"Hráč {name} se úspěšně přihlásil.");
+                }
+                else
+                {
+                    await writer.WriteAsync("Tento ucet neexistuje. Zadej heslo pro vytvoreni noveho uctu:\r\n> ");
+                    string password = await reader.ReadLineAsync();
+                    passwordHash = _saveManager.HashPassword(password);
+
+                    newPlayer.CurrentRoom = _world.StartRoom;
+                    await writer.WriteAsync("\r\nUcet vytvoren. Vitej na stanici Tartarus!\r\n");
+                    _logger.Log($"Vytvořen nový účet: {name}.");
                 }
 
-                await writer.WriteAsync($"\r\nVitej na stanici Tartarus, {newPlayer.Name}!\r\n");
-                _parser.ProcessCommand(newPlayer, "prozkoumej"); // Automatický rozhlédnutí
+                // 3. Vstup do světa
+                lock (_world)
+                {
+                    newPlayer.CurrentRoom.Players.Add(newPlayer);
+                    foreach (var p in newPlayer.CurrentRoom.Players)
+                    {
+                        if (p != newPlayer) p.SendMessage($"\r\n[Okolí] {newPlayer.Name} se právě připojil.");
+                    }
+                }
 
-                // 3. Hlavní herní smyčka pro tohoto klienta
+                _parser.ProcessCommand(newPlayer, "prozkoumej");
+
+                // 4. Hlavní herní smyčka
                 while (client.Connected)
                 {
                     string input = await reader.ReadLineAsync();
@@ -88,37 +129,39 @@ namespace TartarusMUD
                     }
                     else
                     {
-                        newPlayer.SendMessage(""); // Jen znovu vykreslí prompt ">"
+                        newPlayer.SendMessage(""); 
                     }
                 }
             }
-            catch (IOException)
-            {
-                /* Ignorujeme odpojení */
-            }
+            catch (IOException) { /* Běžné odpojení */ }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Chyba] Klient {clientId}: {ex.Message}");
+                _logger.Log($"[Chyba] Klient {clientId}: {ex.Message}");
             }
             finally
             {
-                // 4. Bezpečné odhlášení
+                // 5. BEZPEČNÉ ULOŽENÍ A ODHLÁŠENÍ (Spustí se vždy, i při pádu internetu u klienta)
+                if (!string.IsNullOrEmpty(newPlayer.Name) && !string.IsNullOrEmpty(passwordHash))
+                {
+                    _saveManager.SavePlayer(newPlayer, passwordHash);
+                    _logger.Log($"Stav hráče {newPlayer.Name} byl bezpečně uložen.");
+                }
+
                 lock (_world)
                 {
                     if (newPlayer.CurrentRoom != null)
                     {
                         newPlayer.CurrentRoom.Players.Remove(newPlayer);
-                        // Upozorníme ostatní, že hráč zmizel
                         foreach (var p in newPlayer.CurrentRoom.Players)
                         {
-                            p.SendMessage($"\r\n[Okolí] {newPlayer.Name} se rozplynul ve vzduchu (odpojen).");
+                            p.SendMessage($"\r\n[Okolí] {newPlayer.Name} se odpojil.");
                         }
                     }
                 }
-
+                
                 _connectedClients.TryRemove(clientId, out _);
                 client.Close();
-                Console.WriteLine($"[Odpojeno] {newPlayer.Name} se odpojil.");
+                _logger.Log($"Spojení s {newPlayer.Name ?? clientId.ToString()} ukončeno.");
             }
         }
     }

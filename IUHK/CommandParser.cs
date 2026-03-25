@@ -14,9 +14,10 @@ namespace TartarusMUD.Core
         {
             if (string.IsNullOrWhiteSpace(input)) return;
 
-            string[] parts = input.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            string command = parts[0];
-            string argument = parts.Length > 1 ? parts[1] : "";
+            // ZMĚNA: Rozdělíme text maximálně na 2 části, aby zbytek věty zůstal neporušený
+            string[] parts = input.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+            string command = parts[0].ToLower(); // Příkaz samotný chceme vždy malými písmeny
+            string argument = parts.Length > 1 ? parts[1].Trim() : "";
 
             lock (_worldLock)
             {
@@ -24,6 +25,11 @@ namespace TartarusMUD.Core
                 {
                     case "jdi":
                         HandleMove(player, argument);
+                        break;
+                    // ... (ostatní stávající příkazy nech beze změny) ...
+                    // NOVÝ PŘÍKAZ PRO CHAT:
+                    case "rekni":
+                        HandleSay(player, argument);
                         break;
                     case "prozkoumej":
                         HandleLook(player);
@@ -173,10 +179,30 @@ namespace TartarusMUD.Core
                 player.SendMessage($"Nikdo jménem '{npcName}' tu není.");
             }
         }
+        private void HandleSay(Player player, string message)
+        {
+            if (string.IsNullOrEmpty(message))
+            {
+                player.SendMessage("Co chceš říct? (použití: rekni <text>)");
+                return;
+            }
+
+            // 1. Odezva samotnému hráči
+            player.SendMessage($"Říkáš: \"{message}\"");
+
+            // 2. Odeslání všem ostatním v téže místnosti
+            // Používáme .Where, abychom zprávu neposlali znovu odesílateli
+            var otherPlayers = player.CurrentRoom.Players.Where(p => p != player);
+    
+            foreach (var p in otherPlayers)
+            {
+                p.SendMessage($"\r\n[{player.Name}] říká: \"{message}\"");
+            }
+        }
 
         private void HandleHelp(Player player)
         {
-            player.SendMessage("Dostupné příkazy: jdi <směr>, prozkoumej, vezmi <předmět>, odloz <předmět>, inventar, mluv <jméno>, pomoc");
+            player.SendMessage("Dostupné příkazy: jdi <směr>, prozkoumej, vezmi <předmět>, odloz <předmět>, inventar, mluv <jméno>, rekni <text>, pomoc");
         }
 
         private void BroadcastToRoom(Room room, string message)
