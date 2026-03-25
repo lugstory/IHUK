@@ -49,6 +49,9 @@ namespace TartarusMUD.Core
                     case "pomoc":
                         HandleHelp(player);
                         break;
+                    case "odemkni":
+                        HandleUnlock(player, argument);
+                        break;
                     default:
                         player.SendMessage("Neznámý příkaz. Napiš 'pomoc' pro seznam příkazů.");
                         break;
@@ -64,6 +67,14 @@ namespace TartarusMUD.Core
                 return;
             }
 
+            // 1. KONTROLA ZÁMKU: Musí být jako první!
+            if (player.CurrentRoom.LockedExits.ContainsKey(direction))
+            {
+                player.SendMessage($"Dveře směrem na '{direction}' jsou pevně zavřené a zamčené.");
+                return; // Příkaz return okamžitě ukončí metodu, takže se kód pro pohyb vůbec nespustí.
+            }
+
+            // 2. VLASTNÍ POHYB: Provede se jen tehdy, pokud nás nezastavil zámek výše.
             if (player.CurrentRoom.Exits.TryGetValue(direction, out Room nextRoom))
             {
                 // Odejít z aktuální místnosti
@@ -73,7 +84,7 @@ namespace TartarusMUD.Core
                 // Vstoupit do nové
                 player.CurrentRoom = nextRoom;
                 player.CurrentRoom.Players.Add(player);
-                BroadcastToRoom(player.CurrentRoom, $"{player.Name} přišel do místnosti.");
+                BroadcastToRoom(player.CurrentRoom, $"{player.Name} přišel z jiného směru.");
 
                 // Automaticky prozkoumat po příchodu
                 HandleLook(player);
@@ -90,6 +101,8 @@ namespace TartarusMUD.Core
             string output = $"--- {r.Name.ToUpper()} ---\r\n{r.Description}\r\n";
             
             output += $"Východy: {(r.Exits.Count > 0 ? string.Join(", ", r.Exits.Keys) : "žádné")}\r\n";
+            if (r.LockedExits.Count > 0)
+                output += $"Zamčené dveře: {string.Join(", ", r.LockedExits.Keys)}\r\n";
             
             if (r.Items.Count > 0)
                 output += $"Předměty zde: {string.Join(", ", r.Items)}\r\n";
@@ -100,6 +113,7 @@ namespace TartarusMUD.Core
             var otherPlayers = r.Players.Where(p => p != player).Select(p => p.Name).ToList();
             if (otherPlayers.Count > 0)
                 output += $"Ostatní hráči: {string.Join(", ", otherPlayers)}\r\n";
+            
 
             player.SendMessage(output);
         }
@@ -202,7 +216,7 @@ namespace TartarusMUD.Core
 
         private void HandleHelp(Player player)
         {
-            player.SendMessage("Dostupné příkazy: jdi <směr>, prozkoumej, vezmi <předmět>, odloz <předmět>, inventar, mluv <jméno>, rekni <text>, pomoc");
+            player.SendMessage("Dostupné příkazy: jdi <směr>, prozkoumej, vezmi <předmět>, odloz <předmět>, inventar, mluv <jméno>, rekni <text>, pomoc, odemkni <smer>");
         }
 
         private void BroadcastToRoom(Room room, string message)
@@ -210,6 +224,39 @@ namespace TartarusMUD.Core
             foreach (var p in room.Players)
             {
                 p.SendMessage($"\r\n[Okolí] {message}");
+            }
+        }
+        private void HandleUnlock(Player player, string direction)
+        {
+            if (string.IsNullOrEmpty(direction))
+            {
+                player.SendMessage("Co chceš odemknout? (např. 'odemkni zapad')");
+                return;
+            }
+
+            if (player.CurrentRoom.LockedExits.TryGetValue(direction, out string requiredKey))
+            {
+                // Má hráč potřebný klíč v inventáři?
+                if (player.Inventory.Contains(requiredKey))
+                {
+                    // Odemkneme dveře (smažeme je ze seznamu zamčených)
+                    player.CurrentRoom.LockedExits.Remove(direction);
+            
+                    player.SendMessage($"Použil jsi {requiredKey} a odemkl dveře na {direction}!");
+                    BroadcastToRoom(player.CurrentRoom, $"{player.Name} odemkl dveře na {direction}.");
+                }
+                else
+                {
+                    player.SendMessage($"K odemčení těchto dveří potřebuješ: {requiredKey}");
+                }
+            }
+            else if (player.CurrentRoom.Exits.ContainsKey(direction))
+            {
+                player.SendMessage("Tyto dveře nejsou zamčené.");
+            }
+            else
+            {
+                player.SendMessage("Tímto směrem žádné dveře nejsou.");
             }
         }
     }

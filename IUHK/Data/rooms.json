@@ -4,23 +4,35 @@
     "Name": "Kryogenická komora A",
     "Description": "Probudil ses v chladné, matně osvětlené místnosti. Všude kolem jsou poškozené kryokapsle. Na sever vedou pootevřené dveře.",
     "ExitIds": { "sever": "chodba_1" },
-    "Items": [ "karta" ],
+    "LockedExits": {},
+    "Items": [ "cervena_karta" ],
     "Npcs": {}
   },
   {
     "Id": "chodba_1",
     "Name": "Temná chodba",
-    "Description": "Dlouhá kovová chodba. Blikající zářivky odhalují krvavé stopy na podlaze. Na jihu je kryokomora, na východě vidíš skladiště.",
-    "ExitIds": { "jih": "kryo_1", "vychod": "sklad_1" },
+    "Description": "Dlouhá kovová chodba. Blikající zářivky odhalují krvavé stopy na podlaze. Na jihu je kryokomora, na východě skladiště a na západ jsou těžké pancéřové dveře.",
+    "ExitIds": { "jih": "kryo_1", "vychod": "sklad_1", "zapad": "lab_1" },
+    "LockedExits": { "zapad": "cervena_karta" },
     "Items": [],
-    "Npcs": { "bot": "Údržbářský bot jiskří a mechanickým hlasem opakuje: 'Kritické poškození trupu. Sektor uzavřen.'" }
+    "Npcs": { "bot": "Údržbářský bot jiskří a opakuje: 'Sektor laboratoří uzamčen. Vyžadována červená karta.'" }
   },
   {
     "Id": "sklad_1",
     "Name": "Skladiště",
-    "Description": "Místnost plná rozházených beden a harampádí. Vypadá to, že tu někdo ve spěchu hledal zásoby. Na západ se vrátíš do chodby.",
+    "Description": "Místnost plná rozházených beden. Na západ se vrátíš do chodby.",
     "ExitIds": { "zapad": "chodba_1" },
+    "LockedExits": {},
     "Items": [ "lekarnicka" ],
+    "Npcs": {}
+  },
+  {
+    "Id": "lab_1",
+    "Name": "Zabezpečená laboratoř",
+    "Description": "Vzduch je tu cítit ozónem a krví. Na zemi leží zničené vybavení a... něco obrovského, co se právě pohnulo. Na východ jsou dveře zpět do chodby.",
+    "ExitIds": { "vychod": "chodba_1" },
+    "LockedExits": {},
+    "Items": [ "plazmovy_rezak" ],
     "Npcs": {}
   }
 ]

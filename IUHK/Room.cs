@@ -11,6 +11,7 @@ namespace TartarusMUD.Models
         
         // Z JSONu načteme jen textová ID (např. "sever" -> "chodba_1")
         public Dictionary<string, string> ExitIds { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string> LockedExits { get; set; } = new Dictionary<string, string>();
         
         // Herní logika bude stále používat toto (skutečné reference)
         [JsonIgnore] // Toto nechceme ukládat/načítat přímo z JSONu
