@@ -1,9 +1,17 @@
-﻿namespace IUHK;
+﻿using System;
+using System.Threading.Tasks;
 
-class Program
+namespace TartarusMUD
 {
-    static void Main(string[] args)
+    class Program
     {
-        Console.WriteLine("Hello, World!");
+        static async Task Main(string[] args)
+        {
+            Console.WriteLine("Spouštím server Stanice Tartarus...");
+            int port = 65525;
+            
+            GameServer server = new GameServer();
+            await server.StartAsync(port);
+        }
     }
 }
