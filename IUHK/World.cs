@@ -9,6 +9,8 @@ namespace TartarusMUD.Core
     public class World
     {
         public Room StartRoom { get; private set; }
+// Globální databáze předmětů
+public Dictionary<string, Item> ItemsDatabase { get; private set; } = new Dictionary<string, Item>();
         
         // Slovník všech místností pro rychlé vyhledávání podle ID
         private Dictionary<string, Room> _rooms = new Dictionary<string, Room>();
@@ -28,7 +30,23 @@ namespace TartarusMUD.Core
             }
 
             try
-            {
+            {string itemsPath = Path.Combine("Data", "items.json");
+if (File.Exists(itemsPath))
+{
+    string itemsJson = File.ReadAllText(itemsPath);
+    List<Item> loadedItems = JsonSerializer.Deserialize<List<Item>>(itemsJson);
+    foreach (var item in loadedItems)
+    {
+        ItemsDatabase[item.Id] = item;
+    }
+    Console.WriteLine($"[Systém] Úspěšně načteno předmětů: {ItemsDatabase.Count}");
+}
+else
+{
+    Console.WriteLine("[Varování] Soubor items.json nebyl nalezen!");
+}
+// ------------------------
+
                 // 1. FÁZE: Načtení dat z JSONu
                 string jsonString = File.ReadAllText(filePath);
                 List<Room> loadedRooms = JsonSerializer.Deserialize<List<Room>>(jsonString);

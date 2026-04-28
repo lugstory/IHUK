@@ -8,6 +8,8 @@ namespace TartarusMUD.Models
         public string Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+		// Změna: Místo Dictionary<string, string> je to nyní Dictionary<string, Npc>
+		public Dictionary<string, Npc> Npcs { get; set; } = new Dictionary<string, Npc>();
         
         // Z JSONu načteme jen textová ID (např. "sever" -> "chodba_1")
         public Dictionary<string, string> ExitIds { get; set; } = new Dictionary<string, string>();
@@ -18,7 +20,6 @@ namespace TartarusMUD.Models
         public Dictionary<string, Room> Exits { get; set; } = new Dictionary<string, Room>();
         
         public List<string> Items { get; set; } = new List<string>();
-        public Dictionary<string, string> Npcs { get; set; } = new Dictionary<string, string>();
         
         [JsonIgnore]
         public List<Player> Players { get; set; } = new List<Player>();

@@ -9,6 +9,10 @@ namespace TartarusMUD.Models
         public Room CurrentRoom { get; set; }
         public List<string> Inventory { get; set; } = new List<string>();
         public StreamWriter Writer { get; private set; }
+        public int Hp { get; set; } = 100;
+        public int MaxHp { get; set; } = 100;
+        public int BaseDamage { get; set; } = 10;
+        public string EquippedWeaponId { get; set; } = null; // ID aktuálně držené zbraně
 
         public Player(StreamWriter writer)
         {

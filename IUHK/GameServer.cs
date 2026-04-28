@@ -14,11 +14,17 @@ namespace TartarusMUD
         private readonly ConcurrentDictionary<Guid, TcpClient> _connectedClients = new();
         
         // Naše herní a systémové komponenty
-        private readonly World _world = new World();
-        private readonly CommandParser _parser = new CommandParser();
-        private readonly SaveManager _saveManager = new SaveManager();
-        private readonly ServerLogger _logger = new ServerLogger();
+        private readonly World _world;
+private readonly CommandParser _parser;
+private readonly SaveManager _saveManager = new SaveManager();
+private readonly ServerLogger _logger = new ServerLogger();
 
+// A přidej konstruktor GameServeru, kde se propojí svět a parser:
+public GameServer()
+{
+    _world = new World();
+    _parser = new CommandParser(_world);
+}
         public async Task StartAsync(int port)
         {
             TcpListener listener = new TcpListener(IPAddress.Any, port);

@@ -1,0 +1,23 @@
+﻿[
+  {
+    "Id": "cervena_karta",
+    "Name": "Červená přístupová karta",
+    "Type": "Key",
+    "HealAmount": 0,
+    "DamageBonus": 0
+  },
+  {
+    "Id": "lekarnicka",
+    "Name": "Vojenská lékárnička",
+    "Type": "Consumable",
+    "HealAmount": 50,
+    "DamageBonus": 0
+  },
+  {
+    "Id": "plazmovy_rezak",
+    "Name": "Plazmový řezák",
+    "Type": "Weapon",
+    "HealAmount": 0,
+    "DamageBonus": 15
+  }
+]

@@ -9,6 +9,12 @@ namespace TartarusMUD.Core
         private readonly int _maxInventorySize = 5;
         // Zámek pro synchronizaci změn ve světě napříč asynchronními vlákny
         private static readonly object _worldLock = new object();
+		private readonly World _world; // Přidáno
+
+		public CommandParser(World world) // Nový konstruktor
+		{
+   		 _world = world;
+		}
 
         public void ProcessCommand(Player player, string input)
         {
@@ -34,9 +40,18 @@ namespace TartarusMUD.Core
                     case "prozkoumej":
                         HandleLook(player);
                         break;
+case "pouziji":
+    HandleUse(player, argument);
+    break;
+case "vybav":
+    HandleEquip(player, argument);
+    break;
                     case "vezmi":
                         HandleTake(player, argument);
                         break;
+					case "utoc":
+    					HandleAttack(player, argument);
+   						 break;
                     case "odloz":
                         HandleDrop(player, argument);
                         break;
@@ -163,18 +178,84 @@ namespace TartarusMUD.Core
             player.SendMessage($"Odložil jsi {item}.");
             BroadcastToRoom(player.CurrentRoom, $"{player.Name} odložil {item}.");
         }
+	private void HandleAttack(Player player, string targetId)
+{
+    if (string.IsNullOrEmpty(targetId))
+    {
+        player.SendMessage("Na koho chceš zaútočit? (např. 'utoc mutant')");
+        return;
+    }
+
+    if (!player.CurrentRoom.Npcs.TryGetValue(targetId, out Npc target))
+    {
+        player.SendMessage($"Nikdo takový ('{targetId}') tu není.");
+        return;
+    }
+
+    // 1. Útok hráče
+    int totalDamage = player.BaseDamage;
+string attackText = "Praštil jsi";
+
+// Pokud má zbraň, přidáme její poškození
+if (!string.IsNullOrEmpty(player.EquippedWeaponId) && _world.ItemsDatabase.TryGetValue(player.EquippedWeaponId, out Item weapon))
+{
+    totalDamage += weapon.DamageBonus;
+    attackText = $"Použil jsi {weapon.Name} a zasáhl";
+}
+
+target.Hp -= totalDamage;
+player.SendMessage($"{attackText} {target.Name} za {totalDamage} poškození. (Zbývá mu {target.Hp} HP)");
+BroadcastToRoom(player.CurrentRoom, $"{player.Name} zaútočil na {target.Name}.");
+
+    // 2. Smrt nepřítele
+    if (target.Hp <= 0)
+    {
+        player.SendMessage($"Zabil jsi {target.Name}!");
+        BroadcastToRoom(player.CurrentRoom, $"{target.Name} s řevem padl mrtev k zemi.");
+        player.CurrentRoom.Npcs.Remove(targetId);
+        return; // Souboj končí
+    }
+
+    // 3. Protiútok (Pokud je nepřítel agresivní)
+    if (target.IsHostile)
+    {
+        player.Hp -= target.Damage;
+        player.SendMessage($"[POZOR] {target.Name} se ohnal a zasáhl tě za {target.Damage} poškození! (Máš {player.Hp}/{player.MaxHp} HP)");
+        BroadcastToRoom(player.CurrentRoom, $"{target.Name} brutálně zasáhl hráče {player.Name}.");
+
+        // 4. Smrt hráče (Respawn)
+        if (player.Hp <= 0)
+        {
+            player.SendMessage("\nZEMŘEL JSI...\nTemnota tě pohltila, ale klonovací systém tě znovu probudil v kryokomoře.");
+            BroadcastToRoom(player.CurrentRoom, $"{player.Name} utržil smrtelnou ránu a jeho tělo se rozpadlo na prach.");
+            
+            player.CurrentRoom.Players.Remove(player);
+            
+            // Oživíme ho, doplníme HP a pošleme na start
+            player.Hp = player.MaxHp;
+            player.CurrentRoom = _world.StartRoom;
+            player.CurrentRoom.Players.Add(player);
+            
+            HandleLook(player); // Vykreslíme mu novou místnost
+        }
+    }
+}
 
         private void HandleInventory(Player player)
-        {
-            if (player.Inventory.Count == 0)
-            {
-                player.SendMessage("Tvůj inventář je prázdný.");
-            }
-            else
-            {
-                player.SendMessage($"Inventář ({player.Inventory.Count}/{_maxInventorySize}): {string.Join(", ", player.Inventory)}");
-            }
-        }
+{
+    string weaponName = "Pěsti";
+    if (!string.IsNullOrEmpty(player.EquippedWeaponId) && _world.ItemsDatabase.TryGetValue(player.EquippedWeaponId, out Item weapon))
+    {
+        weaponName = weapon.Name;
+    }
+
+    string output = $"=== STAV HRÁČE ===\r\nZdraví: {player.Hp}/{player.MaxHp} HP\r\nZbraň: {weaponName}\r\n------------------\r\nInventář: ";
+    
+    if (player.Inventory.Count == 0) output += "prázdný";
+    else output += string.Join(", ", player.Inventory);
+    
+    player.SendMessage(output);
+}
 
         private void HandleTalk(Player player, string npcName)
         {
@@ -184,10 +265,10 @@ namespace TartarusMUD.Core
                 return;
             }
 
-            if (player.CurrentRoom.Npcs.TryGetValue(npcName, out string dialogue))
-            {
-                player.SendMessage($"[{npcName}]: {dialogue}");
-            }
+           if (player.CurrentRoom.Npcs.TryGetValue(npcName, out Npc npc))
+			{
+   			 player.SendMessage($"[{npc.Name}]: {npc.Dialogue}");
+			}
             else
             {
                 player.SendMessage($"Nikdo jménem '{npcName}' tu není.");
@@ -216,7 +297,7 @@ namespace TartarusMUD.Core
 
         private void HandleHelp(Player player)
         {
-            player.SendMessage("Dostupné příkazy: jdi <směr>, prozkoumej, vezmi <předmět>, odloz <předmět>, inventar, mluv <jméno>, rekni <text>, pomoc, odemkni <smer>");
+            player.SendMessage("Dostupné příkazy: jdi <směr>, prozkoumej, vezmi <předmět>, odloz <předmět>, inventar, mluv <jméno>, rekni <text>, pomoc, odemkni <smer>, utoc <jmeno>");
         }
 
         private void BroadcastToRoom(Room room, string message)
@@ -259,5 +340,51 @@ namespace TartarusMUD.Core
                 player.SendMessage("Tímto směrem žádné dveře nejsou.");
             }
         }
+    
+private void HandleUse(Player player, string itemId)
+{
+    if (string.IsNullOrEmpty(itemId)) { player.SendMessage("Co chceš použít? (např. 'pouziji lekarnicka')"); return; }
+    if (!player.Inventory.Contains(itemId)) { player.SendMessage("Tohle u sebe nemáš."); return; }
+
+    if (_world.ItemsDatabase.TryGetValue(itemId, out Item item))
+    {
+        if (item.Type == "Consumable")
+        {
+            // Vyléčení hráče
+            player.Hp += item.HealAmount;
+            if (player.Hp > player.MaxHp) player.Hp = player.MaxHp; // Zastropování na MaxHp
+            
+            // Lékárnička se po použití zničí/zmizí
+            player.Inventory.Remove(itemId); 
+            
+            player.SendMessage($"Použil jsi {item.Name} a doplnil si {item.HealAmount} HP. (Máš {player.Hp}/{player.MaxHp} HP)");
+        }
+        else if (item.Type == "Weapon")
+        {
+            player.SendMessage($"Zbraň '{item.Name}' nemůžeš 'použít'. Zkus příkaz 'vybav {itemId}'.");
+        }
+        else
+        {
+            player.SendMessage($"{item.Name} se takto nedá použít.");
+        }
     }
 }
+
+private void HandleEquip(Player player, string itemId)
+{
+    if (string.IsNullOrEmpty(itemId)) { player.SendMessage("Co chceš vybavit? (např. 'vybav plazmovy_rezak')"); return; }
+    if (!player.Inventory.Contains(itemId)) { player.SendMessage("Tohle u sebe nemáš."); return; }
+
+    if (_world.ItemsDatabase.TryGetValue(itemId, out Item item))
+    {
+        if (item.Type == "Weapon")
+        {
+            player.EquippedWeaponId = itemId;
+            player.SendMessage($"Vybavil sis {item.Name}. Tvé útoky teď způsobují větší poškození!");
+        }
+        else
+        {
+            player.SendMessage($"{item.Name} není zbraň.");
+        }
+    }
+}}}
