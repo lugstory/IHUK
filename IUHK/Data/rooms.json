@@ -3,72 +3,51 @@
     "Id": "kryo_1",
     "Name": "Kryogenická komora A",
     "Description": "Probudil ses v chladné, matně osvětlené místnosti. Všude kolem jsou poškozené kryokapsle. Na sever vedou pootevřené dveře.",
-    "ExitIds": {
-      "sever": "chodba_1"
-    },
+    "ExitIds": { "sever": "chodba_1" },
     "LockedExits": {},
-    "Items": [
-      "cervena_karta"
-    ],
-    "Npcs": {}
+    "Items": [ "cervena_karta" ],
+    "Npcs": {
+      "terminal": { "Id": "terminal", "Name": "AI Terminál", "Dialogue": "KRITICKÉ SELHÁNÍ. Podpora života selhává. Najdi fúzní baterii v laboratoři a donese ji do strojovny (jih ze skladiště).", "Hp": 999, "Damage": 0, "IsHostile": false }
+    }
   },
   {
     "Id": "chodba_1",
     "Name": "Temná chodba",
     "Description": "Dlouhá kovová chodba. Blikající zářivky odhalují krvavé stopy na podlaze. Na jihu je kryokomora, na východě skladiště a na západ jsou těžké pancéřové dveře.",
-    "ExitIds": {
-      "jih": "kryo_1",
-      "vychod": "sklad_1",
-      "zapad": "lab_1"
-    },
-    "LockedExits": {
-      "zapad": "cervena_karta"
-    },
+    "ExitIds": { "jih": "kryo_1", "vychod": "sklad_1", "zapad": "lab_1" },
+    "LockedExits": { "zapad": "cervena_karta" },
     "Items": [],
     "Npcs": {
-      "bot": {
-        "Id": "bot",
-        "Name": "Údržbářský bot",
-        "Dialogue": "Kritické poškození trupu. Sektor laboratoří uzamčen.",
-        "Hp": 50,
-        "Damage": 5,
-        "IsHostile": false
-      }
+      "bot": { "Id": "bot", "Name": "Údržbářský bot", "Dialogue": "Kritické poškození trupu. Sektor laboratoří uzamčen.", "Hp": 50, "Damage": 5, "IsHostile": false }
     }
   },
   {
     "Id": "sklad_1",
     "Name": "Skladiště",
-    "Description": "Místnost plná rozházených beden. Na západ se vrátíš do chodby.",
-    "ExitIds": {
-      "zapad": "chodba_1"
-    },
+    "Description": "Místnost plná rozházených beden. Na západ se vrátíš do chodby, na jihu vidíš vstup do strojovny.",
+    "ExitIds": { "zapad": "chodba_1", "jih": "strojovna_1" },
     "LockedExits": {},
-    "Items": [
-      "lekarnicka"
-    ],
+    "Items": [ "lekarnicka" ],
     "Npcs": {}
   },
   {
     "Id": "lab_1",
     "Name": "Zabezpečená laboratoř",
-    "Description": "Vzduch je tu cítit ozónem a krví. Na zemi leží zničené vybavení a... něco obrovského, co se právě pohnulo. Na východ jsou dveře zpět do chodby.",
-    "ExitIds": {
-      "vychod": "chodba_1"
-    },
+    "Description": "Vzduch je tu cítit ozónem a krví. Na zemi leží zničené vybavení.",
+    "ExitIds": { "vychod": "chodba_1" },
     "LockedExits": {},
-    "Items": [
-      "plazmovy_rezak"
-    ],
+    "Items": [ "plazmovy_rezak", "fuzni_baterie" ],
     "Npcs": {
-      "mutant": {
-        "Id": "mutant",
-        "Name": "Zmutovaný vědec",
-        "Dialogue": "*Mutant na tebe jen zuřivě vrčí a cení zakrvácené zuby!*",
-        "Hp": 30,
-        "Damage": 15,
-        "IsHostile": true
-      }
+      "mutant": { "Id": "mutant", "Name": "Zmutovaný vědec", "Dialogue": "*Mutant na tebe jen zuřivě vrčí a cení zakrvácené zuby!*", "Hp": 30, "Damage": 15, "IsHostile": true }
     }
+  },
+  {
+    "Id": "strojovna_1",
+    "Name": "Hlavní strojovna",
+    "Description": "Obrovská místnost plná potrubí. Uprostřed stojí zhasnutý hlavní generátor. Z boku z něj trčí prázdný slot na baterii. Na sever se vrátíš do skladiště.",
+    "ExitIds": { "sever": "sklad_1" },
+    "LockedExits": {},
+    "Items": [],
+    "Npcs": {}
   }
 ]

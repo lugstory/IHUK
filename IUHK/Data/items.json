@@ -19,5 +19,12 @@
     "Type": "Weapon",
     "HealAmount": 0,
     "DamageBonus": 15
+  },
+  {
+    "Id": "fuzni_baterie",
+    "Name": "Fúzní baterie",
+    "Type": "QuestItem",
+    "HealAmount": 0,
+    "DamageBonus": 0
   }
 ]

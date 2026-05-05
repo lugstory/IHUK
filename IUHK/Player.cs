@@ -13,7 +13,7 @@ namespace TartarusMUD.Models
         public int MaxHp { get; set; } = 100;
         public int BaseDamage { get; set; } = 10;
         public string EquippedWeaponId { get; set; } = null; // ID aktuálně držené zbraně
-
+        public bool IsBleeding { get; set; } = false;
         public Player(StreamWriter writer)
         {
             Writer = writer;

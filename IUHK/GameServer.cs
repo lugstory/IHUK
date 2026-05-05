@@ -24,6 +24,7 @@ public GameServer()
 {
     _world = new World();
     _parser = new CommandParser(_world);
+    _world.StartTimeLoop();
 }
         public async Task StartAsync(int port)
         {

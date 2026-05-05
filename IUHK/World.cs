@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using TartarusMUD.Models;
+using System.Threading.Tasks;
 
 namespace TartarusMUD.Core
 {
@@ -95,5 +96,51 @@ else
             _rooms.TryGetValue(id, out Room room);
             return room;
         }
+        public void StartTimeLoop()
+        {
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    // Čeká 10 vteřin (10 000 milisekund)
+                    await Task.Delay(10000);
+
+                    // Uzamkneme svět pro bezpečné úpravy
+                    lock (this)
+                    {
+                        foreach (var room in _rooms.Values)
+                        {
+                            // Procházíme pozpátku, kdyby náhodou někdo umřel a museli jsme ho přesunout
+                            for (int i = room.Players.Count - 1; i >= 0; i--)
+                            {
+                                var player = room.Players[i];
+                                if (player.IsBleeding)
+                                {
+                                    player.Hp -= 5; // Krvácení ubírá 5 HP
+                                    player.SendMessage("\n[Stav] Krvácíš... ztrácíš 5 HP.");
+
+                                    // Pokud hráč na následky krvácení zemře
+                                    if (player.Hp <= 0)
+                                    {
+                                        player.SendMessage("\nZEMŘEL JSI NA NÁSLEDKY VYKrvácení...");
+                                
+                                        room.Players.RemoveAt(i); // Odstraníme z aktuální místnosti
+                                
+                                        // Respawn
+                                        player.Hp = player.MaxHp;
+                                        player.IsBleeding = false;
+                                        player.CurrentRoom = StartRoom;
+                                        StartRoom.Players.Add(player);
+                                
+                                        player.SendMessage("Klonovací systém tě znovu probudil v kryokomoře. Zkus to znovu.");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
     }
+    
 }

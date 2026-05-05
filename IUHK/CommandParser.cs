@@ -239,6 +239,32 @@ BroadcastToRoom(player.CurrentRoom, $"{player.Name} zaútočil na {target.Name}.
             HandleLook(player); // Vykreslíme mu novou místnost
         }
     }
+
+    if (target.IsHostile)
+    {
+        player.Hp -= target.Damage;
+        string attackMsg =
+            $"\n[POZOR] {target.Name} se ohnal a zasáhl tě za {target.Damage} poškození! (Máš {player.Hp}/{player.MaxHp} HP)";
+
+        // 50% šance, že tě mutant poškrábe a začneš krvácet
+        if (!player.IsBleeding && new Random().Next(0, 2) == 0)
+        {
+            player.IsBleeding = true;
+            attackMsg += "\n[!!!] Jeho pařáty zašly hluboko. ZAČÍNÁŠ KRVÁCET!";
+        }
+
+        player.SendMessage(attackMsg);
+        BroadcastToRoom(player.CurrentRoom, $"{target.Name} brutálně zasáhl hráče {player.Name}.");
+
+        // 4. Smrt hráče... (zbytek zůstává stejný, jen přidej vynulování krvácení)
+        if (player.Hp <= 0)
+        {
+            // ... (tvůj stávající kód pro smrt)
+            player.Hp = player.MaxHp;
+            player.IsBleeding = false; // Po oživení už nekrvácí
+            // ...
+        }
+    }
 }
 
         private void HandleInventory(Player player)
@@ -350,14 +376,43 @@ private void HandleUse(Player player, string itemId)
     {
         if (item.Type == "Consumable")
         {
-            // Vyléčení hráče
             player.Hp += item.HealAmount;
-            if (player.Hp > player.MaxHp) player.Hp = player.MaxHp; // Zastropování na MaxHp
-            
-            // Lékárnička se po použití zničí/zmizí
+            if (player.Hp > player.MaxHp) player.Hp = player.MaxHp;
+    
+            string healMsg = $"Použil jsi {item.Name} a doplnil si {item.HealAmount} HP. (Máš {player.Hp}/{player.MaxHp} HP)";
+    
+            // Zastavení krvácení
+            if (player.IsBleeding)
+            {
+                player.IsBleeding = false;
+                healMsg += "\n[+] Rána je obvázána. Krvácení bylo zastaveno!";
+            }
+    
             player.Inventory.Remove(itemId); 
-            
-            player.SendMessage($"Použil jsi {item.Name} a doplnil si {item.HealAmount} HP. (Máš {player.Hp}/{player.MaxHp} HP)");
+            player.SendMessage(healMsg);
+        }
+        else if (item.Type == "QuestItem" && item.Id == "fuzni_baterie")
+        {
+            // Zkontrolujeme, zda hráč stojí u generátoru
+            if (player.CurrentRoom.Id == "strojovna_1")
+            {
+                player.Inventory.Remove(itemId);
+                
+                string winMessage = "\n==================================================\n" +
+                                    "[SYSTÉM] Fúzní baterie přijata.\n" +
+                                    "[SYSTÉM] Inicializace fúzní reakce... 3... 2... 1...\n" +
+                                    "[SYSTÉM] Generátor naběhl na 100% výkon.\n" +
+                                    "[SYSTÉM] Podpora života plně obnovena.\n\n" +
+                                    "   *** GRATULUJEME! ZACHRÁNIL JSI STANICI TARTARUS! ***\n" +
+                                    "==================================================\n";
+                
+                player.SendMessage(winMessage);
+                BroadcastToRoom(player.CurrentRoom, $"\n[Okolí] {player.Name} vložil baterii do generátoru. Celá stanice se otřásla a zaplavilo ji jasné světlo. Zachránil nás všechny!");
+            }
+            else
+            {
+                player.SendMessage("Tady s tím nemůžeš nic udělat. Zkus to odnést do Strojovny k hlavnímu generátoru.");
+            }
         }
         else if (item.Type == "Weapon")
         {
