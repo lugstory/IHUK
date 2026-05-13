@@ -15,7 +15,7 @@ namespace TartarusMUD.Core
     _world = world;
     _commands = new Dictionary<string, ICommand>();
 
-    // Zde je zaregistrován celý herní slovník příkazů
+    // tady registrujeme commandy lukasi
     RegisterCommand(new LookCommand());
     RegisterCommand(new MoveCommand());
     RegisterCommand(new AttackCommand());
@@ -26,6 +26,7 @@ namespace TartarusMUD.Core
     RegisterCommand(new InventoryCommand());
     RegisterCommand(new TalkCommand());
     RegisterCommand(new HelpCommand());
+    RegisterCommand(new ShoutCommand());
 }
 
         private void RegisterCommand(ICommand command)

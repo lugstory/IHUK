@@ -9,7 +9,7 @@ namespace TartarusMUD.Core
 {
     public class World
     {
-        public Room StartRoom { get; private set; }
+        public Room? StartRoom { get; private set; } = null;
 // Globální databáze předmětů
 public Dictionary<string, Item> ItemsDatabase { get; private set; } = new Dictionary<string, Item>();
         
@@ -31,34 +31,38 @@ public Dictionary<string, Item> ItemsDatabase { get; private set; } = new Dictio
             }
 
             try
-            {string itemsPath = Path.Combine("Data", "items.json");
-if (File.Exists(itemsPath))
-{
-    string itemsJson = File.ReadAllText(itemsPath);
-    List<Item> loadedItems = JsonSerializer.Deserialize<List<Item>>(itemsJson);
-    foreach (var item in loadedItems)
-    {
-        ItemsDatabase[item.Id] = item;
-    }
-    Console.WriteLine($"[Systém] Úspěšně načteno předmětů: {ItemsDatabase.Count}");
-}
-else
-{
-    Console.WriteLine("[Varování] Soubor items.json nebyl nalezen!");
-}
-// ------------------------
+            {
+                string itemsPath = Path.Combine("Data", "items.json");
+                if (File.Exists(itemsPath))
+                {
+                    string itemsJson = File.ReadAllText(itemsPath);
+                    List<Item>? loadedItems = JsonSerializer.Deserialize<List<Item>>(itemsJson);
+                    if (loadedItems != null)
+                    {
+                        foreach (var item in loadedItems)
+                        {
+                            ItemsDatabase[item.Id] = item;
+                        }
+                        Console.WriteLine($"[Systém] Úspěšně načteno předmětů: {ItemsDatabase.Count}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("[Varování] Soubor items.json nebyl nalezen!");
+                }
 
-                // 1. FÁZE: Načtení dat z JSONu
                 string jsonString = File.ReadAllText(filePath);
-                List<Room> loadedRooms = JsonSerializer.Deserialize<List<Room>>(jsonString);
+                List<Room>? loadedRooms = JsonSerializer.Deserialize<List<Room>>(jsonString);
+                if (loadedRooms == null || loadedRooms.Count == 0)
+                {
+                    throw new Exception("Mapa je prázdná nebo se nepodařilo načíst místnosti.");
+                }
 
-                // Uložení do slovníku
                 foreach (var room in loadedRooms)
                 {
                     _rooms[room.Id] = room;
                 }
 
-                // 2. FÁZE: Propojení východů (převod textových ID na skutečné objekty Room)
                 foreach (var room in _rooms.Values)
                 {
                     foreach (var exit in room.ExitIds)
@@ -66,7 +70,7 @@ else
                         string direction = exit.Key;
                         string targetRoomId = exit.Value;
 
-                        if (_rooms.TryGetValue(targetRoomId, out Room targetRoom))
+                        if (_rooms.TryGetValue(targetRoomId, out Room? targetRoom))
                         {
                             room.Exits[direction] = targetRoom;
                         }
@@ -77,12 +81,8 @@ else
                     }
                 }
 
-                // Nastavíme startovní místnost (např. první z načtených)
-                if (loadedRooms.Count > 0)
-                {
-                    StartRoom = loadedRooms[0];
-                    Console.WriteLine($"[Systém] Mapa úspěšně načtena. Počet místností: {_rooms.Count}");
-                }
+                StartRoom = loadedRooms[0];
+                Console.WriteLine($"[Systém] Mapa úspěšně načtena. Počet místností: {_rooms.Count}");
             }
             catch (Exception ex)
             {
@@ -91,9 +91,9 @@ else
         }
         
         // Pomocná metoda pro pozdější použití (např. při obnově pozice hráče)
-        public Room GetRoomById(string id)
+        public Room? GetRoomById(string id)
         {
-            _rooms.TryGetValue(id, out Room room);
+            _rooms.TryGetValue(id, out Room? room);
             return room;
         }
         public void StartTimeLoop()
@@ -129,8 +129,15 @@ else
                                         // Respawn
                                         player.Hp = player.MaxHp;
                                         player.IsBleeding = false;
-                                        player.CurrentRoom = StartRoom;
-                                        StartRoom.Players.Add(player);
+                                        if (StartRoom != null)
+                                        {
+                                            player.CurrentRoom = StartRoom;
+                                            StartRoom.Players.Add(player);
+                                        }
+                                        else
+                                        {
+                                            player.SendMessage("[Chyba] Startovní místnost není nastavena. Kontaktujte administrátora.");
+                                        }
                                 
                                         player.SendMessage("Klonovací systém tě znovu probudil v kryokomoře. Zkus to znovu.");
                                     }
@@ -141,6 +148,9 @@ else
                 }
             });
         }
+        
+        // Public property to expose rooms
+        public IReadOnlyDictionary<string, Room> Rooms => _rooms;
     }
     
 }

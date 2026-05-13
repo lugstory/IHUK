@@ -8,6 +8,7 @@ namespace TartarusMUD
         static async Task Main(string[] args)
         {
             Console.WriteLine("Spouštím server Stanice Tortarus...");
+            // tohle zmen tomasi, at to sedi na skolni pc
             int port = 65525;
             
             GameServer server = new GameServer();

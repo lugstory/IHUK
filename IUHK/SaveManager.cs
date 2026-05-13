@@ -19,7 +19,7 @@ namespace TartarusMUD.Core
             }
         }
 
-        // Zahashuje heslo pomocí SHA-256 (bezpečnostní standard)
+        // hash pomoci sha256, aby se hesla neukládala v čisté podobě
         public string HashPassword(string password)
         {
             using (SHA256 sha256Hash = SHA256.Create())
