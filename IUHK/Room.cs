@@ -33,5 +33,15 @@ namespace TartarusMUD.Models
             Name = name;
             Description = description;
         }
+        public void Broadcast(string message, Player excludePlayer = null)
+{
+    foreach (var player in Players)
+    {
+        if (player != excludePlayer)
+        {
+            player.SendMessage(message);
+        }
+    }
+}
     }
 }
