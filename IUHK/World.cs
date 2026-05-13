@@ -12,83 +12,90 @@ namespace TartarusMUD.Core
         public Room? StartRoom { get; private set; } = null;
 // Globální databáze předmětů
 public Dictionary<string, Item> ItemsDatabase { get; private set; } = new Dictionary<string, Item>();
+private readonly ServerConfig _config;
         
         // Slovník všech místností pro rychlé vyhledávání podle ID
         private Dictionary<string, Room> _rooms = new Dictionary<string, Room>();
 
-        public World()
+        public World(ServerConfig config)
         {
-            LoadWorld();
+            _config = config;
+            LoadWorld(); // Zavoláme načítání rovnou z konstruktoru
         }
 
-        private void LoadWorld()
+      private void LoadWorld()
+{
+    // Cesty nyní čteme z naší konfigurace
+    string roomsPath = _config.RoomsPath;
+    string itemsPath = _config.ItemsPath;
+
+    if (!File.Exists(roomsPath))
+    {
+        throw new FileNotFoundException($"Kritická chyba: Soubor s mapou nebyl nalezen na cestě {roomsPath}");
+    }
+
+    try
+    {
+        // --- 1. NAČTENÍ PŘEDMĚTŮ ---
+        if (File.Exists(itemsPath))
         {
-            string filePath = Path.Combine("Data", "rooms.json");
-
-            if (!File.Exists(filePath))
+            string itemsJson = File.ReadAllText(itemsPath);
+            List<Item>? loadedItems = JsonSerializer.Deserialize<List<Item>>(itemsJson);
+            if (loadedItems != null)
             {
-                throw new FileNotFoundException($"Kritická chyba: Soubor s mapou nebyl nalezen na cestě {filePath}");
-            }
-
-            try
-            {
-                string itemsPath = Path.Combine("Data", "items.json");
-                if (File.Exists(itemsPath))
+                foreach (var item in loadedItems)
                 {
-                    string itemsJson = File.ReadAllText(itemsPath);
-                    List<Item>? loadedItems = JsonSerializer.Deserialize<List<Item>>(itemsJson);
-                    if (loadedItems != null)
-                    {
-                        foreach (var item in loadedItems)
-                        {
-                            ItemsDatabase[item.Id] = item;
-                        }
-                        Console.WriteLine($"[Systém] Úspěšně načteno předmětů: {ItemsDatabase.Count}");
-                    }
+                    ItemsDatabase[item.Id] = item;
+                }
+                Console.WriteLine($"[Systém] Úspěšně načteno předmětů: {ItemsDatabase.Count}");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"[Varování] Soubor předmětů nebyl nalezen na cestě: {itemsPath}");
+        }
+
+        // --- 2. NAČTENÍ MÍSTNOSTÍ ---
+        string jsonString = File.ReadAllText(roomsPath);
+        List<Room>? loadedRooms = JsonSerializer.Deserialize<List<Room>>(jsonString);
+        
+        if (loadedRooms == null || loadedRooms.Count == 0)
+        {
+            throw new Exception("Mapa je prázdná nebo se nepodařilo načíst místnosti.");
+        }
+
+        foreach (var room in loadedRooms)
+        {
+            _rooms[room.Id] = room;
+        }
+
+        // --- 3. PROPOJENÍ VÝCHODŮ ---
+        foreach (var room in _rooms.Values)
+        {
+            foreach (var exit in room.ExitIds)
+            {
+                string direction = exit.Key;
+                string targetRoomId = exit.Value;
+
+                if (_rooms.TryGetValue(targetRoomId, out Room? targetRoom))
+                {
+                    room.Exits[direction] = targetRoom;
                 }
                 else
                 {
-                    Console.WriteLine("[Varování] Soubor items.json nebyl nalezen!");
+                    Console.WriteLine($"[Varování mapy] Místnost {room.Id} má východ '{direction}' do neexistující místnosti '{targetRoomId}'!");
                 }
-
-                string jsonString = File.ReadAllText(filePath);
-                List<Room>? loadedRooms = JsonSerializer.Deserialize<List<Room>>(jsonString);
-                if (loadedRooms == null || loadedRooms.Count == 0)
-                {
-                    throw new Exception("Mapa je prázdná nebo se nepodařilo načíst místnosti.");
-                }
-
-                foreach (var room in loadedRooms)
-                {
-                    _rooms[room.Id] = room;
-                }
-
-                foreach (var room in _rooms.Values)
-                {
-                    foreach (var exit in room.ExitIds)
-                    {
-                        string direction = exit.Key;
-                        string targetRoomId = exit.Value;
-
-                        if (_rooms.TryGetValue(targetRoomId, out Room? targetRoom))
-                        {
-                            room.Exits[direction] = targetRoom;
-                        }
-                        else
-                        {
-                            Console.WriteLine($"[Varování mapy] Místnost {room.Id} má východ '{direction}' do neexistující místnosti '{targetRoomId}'!");
-                        }
-                    }
-                }
-
-                StartRoom = loadedRooms[0];
-                Console.WriteLine($"[Systém] Mapa úspěšně načtena. Počet místností: {_rooms.Count}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Kritická chyba] Nepodařilo se načíst mapu: {ex.Message}");
             }
         }
+
+        StartRoom = loadedRooms[0];
+        Console.WriteLine($"[Systém] Mapa úspěšně načtena. Počet místností: {_rooms.Count}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Kritická chyba] Při načítání dat došlo k chybě: {ex.Message}");
+    }
+}
         
         // Pomocná metoda pro pozdější použití (např. při obnově pozice hráče)
         public Room? GetRoomById(string id)

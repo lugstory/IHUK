@@ -8,12 +8,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ffea2a64-9041-4f61-aaf9-149773b5aada" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/IUHK/Data/config.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/IUHK/ServerConfig.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.IUHK/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.IUHK/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/IUHK/CommandParser.cs" beforeDir="false" afterPath="$PROJECT_DIR$/IUHK/CommandParser.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/IUHK/Data/items.json" beforeDir="false" afterPath="$PROJECT_DIR$/IUHK/Data/items.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/IUHK/Data/rooms.json" beforeDir="false" afterPath="$PROJECT_DIR$/IUHK/Data/rooms.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/IUHK/GameServer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/IUHK/GameServer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/IUHK/Player.cs" beforeDir="false" afterPath="$PROJECT_DIR$/IUHK/Player.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/IUHK/IUHK.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/IUHK/IUHK.csproj" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/IUHK/World.cs" beforeDir="false" afterPath="$PROJECT_DIR$/IUHK/World.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -44,6 +43,7 @@
     <setting file="file://$PROJECT_DIR$/IUHK/GameServer.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/IUHK/Player.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/IUHK/Room.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/IUHK/ServerConfig.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/IUHK/World.cs" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
@@ -79,10 +79,8 @@
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="" />
       <option name="PASS_PARENT_ENVS" value="1" />
-      <option name="USE_EXTERNAL_CONSOLE" value="0" />
       <option name="ENV_FILE_PATHS" value="" />
       <option name="REDIRECT_INPUT_PATH" value="" />
-      <option name="PTY_MODE" value="Auto" />
       <option name="MIXED_MODE_DEBUG" value="0" />
       <option name="USE_MONO" value="0" />
       <option name="RUNTIME_ARGUMENTS" value="" />
@@ -106,7 +104,7 @@
       <option name="presentableId" value="Default" />
       <updated>1774433572146</updated>
       <workItem from="1774433574755" duration="2141000" />
-      <workItem from="1778008458533" duration="1526000" />
+      <workItem from="1778665441072" duration="526000" />
     </task>
     <task id="LOCAL-00001" summary="add Program.cs">
       <option name="closed" value="true" />

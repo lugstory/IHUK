@@ -1,0 +1,6 @@
+{
+  "Port": 65525,
+  "MaxPlayers": 20,
+  "RoomsPath": "Data/rooms.json",
+  "ItemsPath": "Data/items.json"
+}

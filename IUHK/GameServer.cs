@@ -15,6 +15,7 @@ namespace TartarusMUD
         
         // Naše herní a systémové komponenty
         private readonly World _world;
+        public ServerConfig Config { get; private set; } = new ServerConfig();
 private readonly CommandParser _parser;
 private readonly SaveManager _saveManager = new SaveManager();
 private readonly ServerLogger _logger = new ServerLogger();
@@ -22,11 +23,14 @@ private readonly ServerLogger _logger = new ServerLogger();
 // A přidej konstruktor GameServeru, kde se propojí svět a parser:
 public GameServer()
 {
-    _world = new World();
+    _world = new World(Config); // Předáme světu naši načtenou konfiguraci!
     _parser = new CommandParser(_world);
     _world.StartTimeLoop();
 }
-        public async Task StartAsync(int port)
+
+
+
+public async Task StartAsync(int port)
         {
             TcpListener listener = new TcpListener(IPAddress.Any, port);
             listener.Start();
